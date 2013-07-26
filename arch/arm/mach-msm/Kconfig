@@ -512,6 +512,7 @@ config ARCH_MSM8226
 	select MSM_RPM_LOG
 	select MSM_RPM_STATS_LOG
 	select ARCH_WANT_KMAP_ATOMIC_FLUSH
+	select HAS_MACH_MEMUTILS
 
 config ARCH_MSMSAMARIUM
 	bool "MSMSAMARIUM"
@@ -3098,4 +3099,9 @@ config AUTOSMP
 	  Automatically hotplugs the multiple CPU cores based on
 	  CPU load and suspend state.
 
+config HAS_MACH_MEMUTILS
+	default n
+	bool "Motorola MSM memcpy enhancements"
+	help
+	Faster memcpy performance for Krait
 endif
