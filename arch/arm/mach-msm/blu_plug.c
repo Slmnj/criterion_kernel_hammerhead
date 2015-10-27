@@ -33,10 +33,12 @@
 #define MAX_ONLINE		(4)
 #define DEF_DOWN_TIMER_CNT	(6)	/* 3 secs */
 #define DEF_UP_TIMER_CNT	(2)	/* 1 sec */
-#define MAX_CORES_SCREENOFF (2)
-#define DEF_PLUG_THRESHOLD 0
+#define MAX_CORES_SCREENOFF     (2)
+#define DEF_PLUG_THRESHOLD       0
+#define BLU_PLUG_ENABLED	 0
 
-static unsigned int up_threshold = UP_THRESHOLD;;
+static unsigned int blu_plug_enabled = BLU_PLUG_ENABLED;
+static unsigned int up_threshold = UP_THRESHOLD;
 static unsigned int delay = DELAY;
 static unsigned int min_online = MIN_ONLINE;
 static unsigned int max_online = MAX_ONLINE;
@@ -51,7 +53,6 @@ static struct delayed_work dyn_work;
 static struct workqueue_struct *dyn_workq;
 static struct work_struct suspend, resume;
 static struct notifier_block notify;
-
 
 /* Bring online each possible CPU up to max_online cores */
 static inline void up_all(void)
@@ -393,12 +394,15 @@ module_param_array(plug_threshold, uint, NULL, 0644);
 
 /***************** end of module parameters *****************/
 
-static int __init dyn_hp_init(void)
+static int dyn_hp_init(void)
 {
+	if (!blu_plug_enabled) {
+		return 0;
+	}
 	notify.notifier_call = fb_notifier_callback;
 	if (fb_register_client(&notify) != 0)
 		pr_info("%s: Failed to register FB notifier callback\n", __func__);
-	
+
 	dyn_workq = alloc_workqueue("dyn_hotplug_workqueue", WQ_HIGHPRI | WQ_FREEZABLE, 0);
 	if (!dyn_workq)
 		return -ENOMEM;
@@ -413,14 +417,43 @@ static int __init dyn_hp_init(void)
 	return 0;
 }
 
-static void __exit dyn_hp_exit(void)
+static void dyn_hp_exit(void)
 {
 	cancel_delayed_work_sync(&dyn_work);
 	fb_unregister_client(&notify);
 	destroy_workqueue(dyn_workq);
-	
+
 	pr_info("%s: deactivated\n", __func__);
 }
+
+/* enabled */
+static int set_enabled(const char *val, const struct kernel_param *kp)
+{
+	int ret = 0;
+	unsigned int i;
+	int blu = 0;
+
+	ret = kstrtouint(val, 10, &i);
+	if (ret)
+		return -EINVAL;
+	if (i < 0 || i > 1)
+		return 0;
+
+	ret = param_set_uint(val, kp);
+	blu_plug_enabled = i;
+	if ((blu_plug_enabled == 1))
+		blu = dyn_hp_init();
+	if ((blu_plug_enabled == 0))
+		dyn_hp_exit();
+	return i;
+}
+
+static struct kernel_param_ops enabled_ops = {
+	.set = set_enabled,
+	.get = param_get_uint,
+};
+
+module_param_cb(enabled, &enabled_ops, &blu_plug_enabled, 0644);
 
 MODULE_AUTHOR("Stratos Karafotis <stratosk@semaphore.gr");
 MODULE_AUTHOR("engstk <eng.stk@sapo.pt>");
