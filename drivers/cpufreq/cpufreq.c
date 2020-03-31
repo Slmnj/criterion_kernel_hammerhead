@@ -451,7 +451,9 @@ static ssize_t store_##file_name					\
 	return ret ? ret : count;					\
 }
 
+#ifndef CONFIG_CPU_MIN_FREQ_RO
 store_one(scaling_min_freq, min);
+#endif
 store_one(scaling_max_freq, max);
 
 /**
@@ -664,7 +666,11 @@ cpufreq_freq_attr_ro(bios_limit);
 cpufreq_freq_attr_ro(related_cpus);
 cpufreq_freq_attr_ro(affected_cpus);
 cpufreq_freq_attr_ro(cpu_utilization);
+#ifdef CONFIG_CPU_MIN_FREQ_RO
+cpufreq_freq_attr_ro(scaling_min_freq);
+#else
 cpufreq_freq_attr_rw(scaling_min_freq);
+#endif
 cpufreq_freq_attr_rw(scaling_max_freq);
 cpufreq_freq_attr_rw(scaling_governor);
 cpufreq_freq_attr_rw(scaling_setspeed);
