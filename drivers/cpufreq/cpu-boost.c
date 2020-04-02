@@ -50,10 +50,10 @@ module_param(boost_ms, uint, 0644);
 static unsigned int sync_threshold;
 module_param(sync_threshold, uint, 0644);
 
-static unsigned int input_boost_enabled = 1;
+static unsigned int input_boost_enabled;
 module_param(input_boost_enabled, uint, 0644);
 
-static unsigned int input_boost_ms = 40;
+static unsigned int input_boost_ms;
 module_param(input_boost_ms, uint, 0644);
 
 static struct delayed_work input_boost_rem;
