@@ -26,7 +26,6 @@
 #include <linux/slab.h>
 #include <linux/input.h>
 #include <linux/time.h>
-#include <linux/fsync.h>
 #include <linux/cpu_boost.h>
 
 struct cpu_sync {
