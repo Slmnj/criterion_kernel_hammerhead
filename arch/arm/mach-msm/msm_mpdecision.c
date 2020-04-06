@@ -82,7 +82,7 @@ static struct msm_mpdec_tuners {
 	.startdelay = MSM_MPDEC_STARTDELAY,
 	.delay = MSM_MPDEC_DELAY,
 	.pause = MSM_MPDEC_PAUSE,
-	.scroff_single_core = true,
+	.scroff_single_core = false,
 	.idle_freq = MSM_MPDEC_IDLE_FREQ,
 	.max_cpus = CONFIG_NR_CPUS,
 	.min_cpus = 1,
@@ -104,7 +104,7 @@ static unsigned int TwTs_Threshold[8] = {140, 0, 140, 190, 140, 190, 0, 190};
 extern unsigned int get_rq_info(void);
 extern unsigned long acpuclk_get_rate(int);
 
-unsigned int state = MSM_MPDEC_IDLE;
+unsigned int state = MSM_MPDEC_DISABLED;
 bool was_paused = false;
 #ifdef CONFIG_MSM_MPDEC_INPUTBOOST_CPUMIN
 bool is_screen_on = true;
@@ -160,7 +160,7 @@ static unsigned long get_slowest_cpu_rate(void) {
 	return slow_rate;
 }
 
-static void mpdec_cpu_up(int cpu) {
+static void __ref mpdec_cpu_up(int cpu) {
 	if (!cpu_online(cpu)) {
 		mutex_lock(&per_cpu(msm_mpdec_cpudata, cpu).hotplug_mutex);
 		cpu_up(cpu);
