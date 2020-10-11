@@ -373,7 +373,6 @@ static struct input_handler adreno_input_handler = {
 };
 
 static int adreno_ft_init_sysfs(struct kgsl_device *device);
-static void adreno_ft_uninit_sysfs(struct kgsl_device *device);
 static int adreno_soft_reset(struct kgsl_device *device);
 
 /**
@@ -2414,7 +2413,7 @@ static int adreno_ft_init_sysfs(struct kgsl_device *device)
 	return kgsl_create_device_sysfs_files(device->dev, ft_attr_list);
 }
 
-static void adreno_ft_uninit_sysfs(struct kgsl_device *device)
+void adreno_ft_uninit_sysfs(struct kgsl_device *device)
 {
 	kgsl_remove_device_sysfs_files(device->dev, ft_attr_list);
 }
