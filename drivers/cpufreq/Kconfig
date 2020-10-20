@@ -42,12 +42,6 @@ config CPU_FREQ_STAT_DETAILS
 
 	  If in doubt, say N.
 
-config CPU_MIN_FREQ_RO
-	bool "scaling_min_freq read-only"
-	depends on CPU_FREQ
-	help
-	  Make CPU scaling min freq read-only.
-
 choice
 	prompt "Default CPUFreq governor"
 	default CPU_FREQ_DEFAULT_GOV_USERSPACE if CPU_FREQ_SA1100 || CPU_FREQ_SA1110
