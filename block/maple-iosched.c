@@ -45,7 +45,7 @@ struct maple_data {
 	int fifo_expire[2][2];
 	int fifo_batch;
 	int writes_starved;
-  int sleep_latency_multiple;
+	int sleep_latency_multiple;
 };
 
 static inline struct maple_data *
@@ -55,7 +55,7 @@ maple_get_data(struct request_queue *q) {
 
 static void
 maple_merged_requests(struct request_queue *q, struct request *rq,
-		    struct request *next)
+			struct request *next)
 {
 	/*
 	 * If next expires before rq, assign its expire time to rq
@@ -85,15 +85,15 @@ maple_add_request(struct request_queue *q, struct request *rq)
 	 * expire time.
 	 */
 
-   	/* inrease expiration when device is asleep */
-   	unsigned int fifo_expire_suspended = mdata->fifo_expire[sync][dir] * sleep_latency_multiple;
-   	if (display_on && mdata->fifo_expire[sync][dir]) {
-   		rq_set_fifo_time(rq, jiffies + mdata->fifo_expire[sync][dir]);
-   		list_add_tail(&rq->queuelist, &mdata->fifo_list[sync][dir]);
-   	} else if (!display_on && fifo_expire_suspended) {
-   		rq_set_fifo_time(rq, jiffies + fifo_expire_suspended);
-   		list_add_tail(&rq->queuelist, &mdata->fifo_list[sync][dir]);
-   	}
+	/* inrease expiration when device is asleep */
+	unsigned int fifo_expire_suspended = mdata->fifo_expire[sync][dir] * sleep_latency_multiple;
+	if (display_on && mdata->fifo_expire[sync][dir]) {
+		rq_set_fifo_time(rq, jiffies + mdata->fifo_expire[sync][dir]);
+		list_add_tail(&rq->queuelist, &mdata->fifo_list[sync][dir]);
+	} else if (!display_on && fifo_expire_suspended) {
+		rq_set_fifo_time(rq, jiffies + fifo_expire_suspended);
+		list_add_tail(&rq->queuelist, &mdata->fifo_list[sync][dir]);
+	}
 }
 
 static struct request *
@@ -132,23 +132,23 @@ maple_choose_expired_request(struct maple_data *mdata)
 	 * Read requests have priority over write.
 	 */
 
-   if (rq_async_read && rq_sync_read) {
-     if (time_after(rq_fifo_time(rq_sync_read), rq_fifo_time(rq_async_read)))
-             return rq_async_read;
-   } else if (rq_async_read) {
-           return rq_async_read;
-   } else if (rq_sync_read) {
-           return rq_sync_read;
-   }
+	if (rq_async_read && rq_sync_read) {
+		if (time_after(rq_fifo_time(rq_sync_read), rq_fifo_time(rq_async_read)))
+			return rq_async_read;
+	} else if (rq_async_read) {
+			return rq_async_read;
+	} else if (rq_sync_read) {
+			return rq_sync_read;
+	}
 
-   if (rq_async_write && rq_sync_write) {
-     if (time_after(rq_fifo_time(rq_sync_write), rq_fifo_time(rq_async_write)))
-             return rq_async_write;
-   } else if (rq_async_write) {
-           return rq_async_write;
-   } else if (rq_sync_write) {
-           return rq_sync_write;
-   }
+	if (rq_async_write && rq_sync_write) {
+		if (time_after(rq_fifo_time(rq_sync_write), rq_fifo_time(rq_async_write)))
+			return rq_async_write;
+	} else if (rq_async_write) {
+			return rq_async_write;
+	} else if (rq_sync_write) {
+			return rq_sync_write;
+	}
 
 	return NULL;
 }
@@ -372,7 +372,7 @@ static struct elv_fs_entry maple_attrs[] = {
 	DD_ATTR(async_write_expire),
 	DD_ATTR(fifo_batch),
 	DD_ATTR(writes_starved),
-  DD_ATTR(sleep_latency_multiple),
+	DD_ATTR(sleep_latency_multiple),
 	__ATTR_NULL
 };
 
