@@ -44,9 +44,9 @@ static struct thermal_info {
 
 enum thermal_freqs {
 	FREQ_HELL		= 729600,
-	FREQ_VERY_HOT		= 1036800,
-	FREQ_HOT		= 1267200,
-	FREQ_WARM		= 1497600,
+	FREQ_VERY_HOT		= 1190400,
+	FREQ_HOT		= 1497600,
+	FREQ_WARM		= 1728000,
 };
 
 enum threshold_levels {
