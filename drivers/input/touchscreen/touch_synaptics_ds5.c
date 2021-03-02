@@ -38,15 +38,6 @@
 
 #include "SynaImage_ds5.h"
 
-#ifdef CONFIG_TOUCHSCREEN_PREVENT_SLEEP
-#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
-#include <linux/input/sweep2wake.h>
-#endif
-#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
-#include <linux/input/doubletap2wake.h>
-#endif
-#endif
-
 static struct workqueue_struct *synaptics_wq;
 
 /* RMI4 spec from 511-000405-01 Rev.D
@@ -507,7 +498,6 @@ static void touch_recover_func(struct work_struct *work_recover)
 				struct synaptics_ts_data, work_recover);
 
 	disable_irq(ts->client->irq);
-
 	safety_reset(ts);
 	touch_ic_init(ts);
 	enable_irq(ts->client->irq);
@@ -539,7 +529,6 @@ static int touch_ic_init(struct synaptics_ts_data *ts)
 err_out_retry:
 	ts->ic_init_err_cnt++;
 	disable_irq_nosync(ts->client->irq);
-
 	safety_reset(ts);
 	queue_delayed_work(synaptics_wq, &ts->work_init, msecs_to_jiffies(10));
 
@@ -620,8 +609,6 @@ static void *get_touch_handle(struct i2c_client *client)
  */
 static int touch_i2c_read(struct i2c_client *client, u8 reg, int len, u8 *buf)
 {
-#define SYNAPTICS_I2C_RETRY 10
-	int retry = 0;
 	struct i2c_msg msgs[] = {
 		{
 			.addr = client->addr,
@@ -637,15 +624,10 @@ static int touch_i2c_read(struct i2c_client *client, u8 reg, int len, u8 *buf)
 		},
 	};
 
-	for (retry = 0; retry <= SYNAPTICS_I2C_RETRY; retry++) {
-		if (i2c_transfer(client->adapter, msgs, 2) == 2)
-			break;
-		if (retry == SYNAPTICS_I2C_RETRY) {
-			if (printk_ratelimit())
-				TOUCH_ERR_MSG("transfer error\n");
-			return -EIO;
-		} else
-			msleep(10);
+	if (i2c_transfer(client->adapter, msgs, 2) < 0) {
+		if (printk_ratelimit())
+			TOUCH_ERR_MSG("transfer error\n");
+		return -EIO;
 	}
 
 	return 0;
@@ -1672,17 +1654,6 @@ static int lcd_notifier_callback(struct notifier_block *this,
 {
 	struct synaptics_ts_data *ts =
 		container_of(this, struct synaptics_ts_data, notif);
-#ifdef CONFIG_TOUCHSCREEN_PREVENT_SLEEP
-#if defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE) || defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE)
-	bool prevent_sleep = false;
-#endif
-#if defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE)
-	prevent_sleep = (s2w_switch > 0) && (s2w_s2sonly == 0);
-#endif
-#if defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE)
-	prevent_sleep = prevent_sleep || (dt2w_switch > 0);
-#endif
-#endif
 
 	TOUCH_DEBUG_TRACE("%s: event = %lu\n", __func__, event);
 
@@ -1699,33 +1670,15 @@ static int lcd_notifier_callback(struct notifier_block *this,
 				msecs_to_jiffies(70));
 		}
 		mutex_unlock(&ts->input_dev->mutex);
-#ifdef CONFIG_TOUCHSCREEN_PREVENT_SLEEP
-		if (prevent_sleep)
-			disable_irq_wake(ts->client->irq);
-#endif
 		break;
 	case LCD_EVENT_OFF_START:
-#ifdef CONFIG_TOUCHSCREEN_PREVENT_SLEEP
-		if (!prevent_sleep)
-#endif
-		{
-			mutex_lock(&ts->input_dev->mutex);
-			if (!cancel_delayed_work_sync(&ts->work_init))
-				disable_irq_nosync(ts->client->irq);
-		}
+		mutex_lock(&ts->input_dev->mutex);
+		if (!cancel_delayed_work_sync(&ts->work_init))
+			disable_irq(ts->client->irq);
 		break;
 	case LCD_EVENT_OFF_END:
-#ifdef CONFIG_TOUCHSCREEN_PREVENT_SLEEP
-		if (!prevent_sleep)
-#endif
-		{
-			synaptics_ts_stop(ts);
-			mutex_unlock(&ts->input_dev->mutex);
-		}
-#ifdef CONFIG_TOUCHSCREEN_PREVENT_SLEEP
-		if (prevent_sleep)
-			enable_irq_wake(ts->client->irq);
-#endif
+		synaptics_ts_stop(ts);
+		mutex_unlock(&ts->input_dev->mutex);
 		break;
 	default:
 		break;
@@ -1859,11 +1812,7 @@ static int synaptics_ts_probe(
 	gpio_direction_input(ts->pdata->irq_gpio);
 
 	ret = request_threaded_irq(client->irq, NULL, touch_irq_handler,
-#ifdef CONFIG_TOUCHSCREEN_PREVENT_SLEEP
-			IRQF_TRIGGER_FALLING | IRQF_ONESHOT | IRQF_NO_SUSPEND, client->name, ts);
-#else
-			IRQF_TRIGGER_FALLING | IRQF_ONESHOT, client->name, ts);
-#endif
+			IRQF_TRIGGER_FALLING | IRQF_ONESHOT | IRQF_NO_SUSPEND | IRQF_EARLY_RESUME, client->name, ts);
 
 	if (ret < 0) {
 		TOUCH_ERR_MSG("request_irq failed. use polling mode\n");
