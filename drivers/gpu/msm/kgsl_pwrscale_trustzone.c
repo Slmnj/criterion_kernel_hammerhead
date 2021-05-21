@@ -45,10 +45,6 @@ spinlock_t tz_lock;
  * per frame for 60fps content.
  */
 #define FLOOR			5000
-/*
- * MIN_BUSY is 1 msec for the sample to be sent
- */
-#define MIN_BUSY		1000
 /* CEILING is 50msec, larger than any standard
  * frame length, but less than the idle timer.
  */
@@ -224,8 +220,7 @@ static void tz_idle(struct kgsl_device *device, struct kgsl_pwrscale *pwrscale)
 	 * has passed since the last run.
 	 */
 	if ((stats.total_time == 0) ||
-		(priv->bin.total_time < FLOOR) ||
-		(unsigned int) priv->bin.busy_time < MIN_BUSY)
+		(priv->bin.total_time < FLOOR))
 		return;
 
 	/* If there is an extended block of busy processing, set
