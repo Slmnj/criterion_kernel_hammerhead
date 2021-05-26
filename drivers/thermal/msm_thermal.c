@@ -156,7 +156,8 @@ static int __devinit msm_thermal_dev_probe(struct platform_device *pdev)
 	if (ret)
 		pr_err("thermals: well, if this fails here, we're fucked\n");
 
-	thermal_wq = alloc_workqueue("thermal_wq", WQ_HIGHPRI, 0);
+	thermal_wq = alloc_workqueue("thermal_wq",
+					WQ_HIGHPRI | WQ_NON_REENTRANT, 0);
 	if (!thermal_wq) {
 		pr_err("thermals: don't worry, if this fails we're also bananas\n");
 		goto err;
